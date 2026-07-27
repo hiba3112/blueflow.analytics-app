@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ONEE Branche Eau - Blue Flow Analytics</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js pour les graphiques -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .page-section { display: none; }
+        .page-section.active { display: block; }
+        .circle-indicator {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .bg-green { background-color: #22c55e; }
+        .bg-red { background-color: #ef4444; }
+        .synoptic-container {
+            position: relative;
+            width: 1050px;
+            height: 580px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .bg-schematic {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: contain;
+            z-index: 1;
+        }
+        .kpi-card {
+            position: absolute;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #0078d4;
+            border-radius: 10px;
+            padding: 3px 6px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .kpi-title { font-size: 10px; font-weight: 600; color: #0078d4; line-height: 1.1; }
+        .kpi-value { font-size: 18px; font-weight: bold; color: #111; line-height: 1.1; }
+        .status-card {
+            position: absolute; top: 10px; right: 15px; z-index: 10;
+            width: 160px; background: #fff8e7; border: 2px solid #d9534f;
+            border-radius: 10px; padding: 6px; text-align: center;
+        }
+        .home-wrapper {
+            display: flex;
+            min-height: 85vh;
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .home-main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+        .home-sidebar-ai {
+            width: 7cm;
+            min-width: 7cm;
+            background: #ffffff;
+            border-left: 2px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.05);
+        }
+        .caricature-container {
+            display: flex;
+            align-items: center;
+            background: #e0f2fe;
+            border: 2px solid #0284c7;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .caricature-avatar {
+            font-size: 45px;
+            margin-right: 15px;
+            background: #fff;
+            padding: 10px;
+            border-radius: 50%;
+            border: 2px solid #0284c7;
+        }
+        .chat-box-ai {
+            flex: 1;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 10px;
+            overflow-y: auto;
+            max-height: 350px;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+    <!-- PAGE 1 : ACCUEIL -->
+    <div id="page-1" class="page-section active container py-4">
+        <div class="home-wrapper">
+            <div class="home-main-content">
+                <div class="text-center mb-4">
+                    <h1 class="fw-bold text-primary display-5 mb-1">ONEE Branche Eau</h1>
+                    <h3 class="text-secondary fw-semibold">Blue Flow Analytics</h3>
+                </div>
+
+                <div class="caricature-container">
+                    <div class="caricature-avatar">🤖💧</div>
+                    <div>
+                        <h5 class="fw-bold text-primary mb-1">Blue Bot</h5>
+                        <p class="mb-0 text-dark small fst-italic">"Bonjour ! Je suis Blue Bot, votre assistant intelligent pour l'analyse de l'eau. Remplissez le formulaire ci-dessous pour commencer ou posez-moi vos questions à droite !"</p>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm p-4 bg-white border-0 rounded-4">
+                    <form id="loginForm" onsubmit="connexionUtilisateur(); return false;">
+                        <div class="row">
+                            <div class="col-md-6 mb-3 text-start">
+                                <label class="form-label fw-bold small">Nom :</label>
+                                <input type="text" id="user-nom" class="form-control" required placeholder="Votre nom">
+                            </div>
+                            <div class="col-md-6 mb-3 text-start">
+                                <label class="form-label fw-bold small">Prénom :</label>
+                                <input type="text" id="user-prenom" class="form-control" required placeholder="Votre prénom">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3 text-start">
+                                <label class="form-label fw-bold small">Adresse Mail :</label>
+                                <input type="email" id="user-mail" class="form-control" required placeholder="votre.email@one.ma">
+                            </div>
+                            <div class="col-md-6 mb-3 text-start">
+                                <label class="form-label fw-bold small">Code d'accès :</label>
+                                <input type="password" id="user-code" class="form-control" required placeholder="Code d'accès">
+                            </div>
+                        </div>
+                        <div class="text-end mt-2">
+                            <button type="submit" class="btn btn-primary px-5 py-2 fw-bold shadow">Se connecter ➔</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="home-sidebar-ai">
+                <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+                    <span class="fs-4 me-2">🤖</span>
+                    <h5 class="fw-bold text-primary m-0 fs-6">Assistant Blue Bot</h5>
+                </div>
+                <div class="chat-box-ai" id="ai-chat-messages">
+                    <div class="mb-2 text-start">
+                        <span class="badge bg-info text-dark fw-bold">Blue Bot</span>
+                        <div class="p-2 bg-white rounded border mt-1 text-secondary">Posez vos questions sur la station, les paramètres ou les formules ici !</div>
+                    </div>
+                </div>
+                <div class="input-group input-group-sm">
+                    <input type="text" id="ai-user-input" class="form-control" placeholder="Posez une question..." onkeypress="if(event.key === 'Enter') envoyerQuestionAI();">
+                    <button class="btn btn-primary" type="button" onclick="envoyerQuestionAI()">Envoyer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 2 : PARAMÈTRES D'ENTRÉE -->
+    <div id="page-2" class="page-section container my-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="text-primary m-0">Paramètres d'Entrée de la Station</h2>
+            <button class="btn btn-outline-danger btn-sm fw-bold" onclick="deconnecter()">Déconnexion</button>
+        </div>
+        <form id="input-parameters-form">
+            <div class="table-responsive bg-white p-3 rounded shadow-sm mb-3">
+                <table class="table table-bordered align-middle small">
+                    <thead class="table-primary text-center">
+                        <tr>
+                            <th>Paramètre</th>
+                            <th>Définition</th>
+                            <th>Formule / Saisie</th>
+                            <th>Valeur Idéale</th>
+                            <th>Plage Min - Max</th>
+                            <th>Conformité</th>
+                            <th>Commentaire / Recommandation</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-inputs">
+                        <!-- Généré dynamiquement en JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-secondary px-4 fw-bold" onclick="goToPage(1)">Retour Accueil</button>
+                <div>
+                    <button type="button" class="btn btn-success px-5 py-2 fw-bold shadow" onclick="lancerCalcul()">Lancer le calcul & Aller à la suite</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- PAGE 3 : PARAMÈTRES DE SORTIE -->
+    <div id="page-3" class="page-section container my-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="text-primary m-0">Paramètres de Sortie et Performance</h2>
+            <button class="btn btn-outline-danger btn-sm fw-bold" onclick="deconnecter()">Déconnexion</button>
+        </div>
+        <div class="table-responsive bg-white p-3 rounded shadow-sm mb-3">
+            <table class="table table-bordered align-middle small">
+                <thead class="table-success text-center">
+                    <tr>
+                        <th>Paramètre</th>
+                        <th>Définition</th>
+                        <th>Formule / Calcul</th>
+                        <th>Valeur Calculée</th>
+                        <th>Valeur Idéale</th>
+                        <th>Plage Min - Max</th>
+                        <th>Conformité</th>
+                        <th>Commentaire / Recommandation</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-outputs">
+                    <!-- Généré dynamiquement en JS -->
+                </tbody>
+            </table>
+        </div>
+        <div class="card bg-white p-4 shadow-sm text-center">
+            <p class="fw-bold mb-2">Voulez-vous enregistrer ces données dans l'historique ?</p>
+            <div class="d-flex justify-content-between mt-3">
+                <button class="btn btn-secondary px-4 fw-bold" onclick="goToPage(2)">Page Précédente</button>
+                <button class="btn btn-primary px-4 fw-bold" onclick="enregistrerEtAllerPage(4)">Oui, enregistrer et accéder aux graphiques</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 4 : HISTORIQUE ET GRAPHES -->
+    <div id="page-4" class="page-section container my-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="text-primary m-0">Historique et Analyses Graphiques</h2>
+            <button class="btn btn-outline-danger btn-sm fw-bold" onclick="deconnecter()">Déconnexion</button>
+        </div>
+        
+        <div class="card p-3 mb-4 shadow-sm bg-white">
+            <h5 class="text-secondary">Tableau d'historique</h5>
+            <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                <table class="table table-sm table-striped text-center small" id="history-table">
+                    <thead>
+                        <tr>
+                            <th>Date / Heure</th>
+                            <th>TDS Entrée</th>
+                            <th>TDS Sortie</th>
+                            <th>Énergie (kWh)</th>
+                            <th>Débit Perméat</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-6 mb-3">
+                <div class="card p-3 shadow-sm bg-white">
+                    <h6 class="text-center fw-bold">TDS en fonction du temps</h6>
+                    <canvas id="chartTds"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card p-3 shadow-sm bg-white">
+                    <h6 class="text-center fw-bold">Énergie consommée</h6>
+                    <canvas id="chartEnergy"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex justify-content-between mt-3">
+            <button class="btn btn-secondary px-4 fw-bold" onclick="goToPage(3)">Page Précédente</button>
+            <button class="btn btn-primary px-4 fw-bold" onclick="goToPage(5)">Accéder au Bilan & Synoptique</button>
+        </div>
+    </div>
+
+    <!-- PAGE 5 : BILAN DES MEMBRANES ET MINI-STATION SYNOPTIQUE -->
+    <div id="page-5" class="page-section container my-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="text-primary m-0">Bilan du Matériel & Synoptique de la Station</h2>
+            <button class="btn btn-outline-danger btn-sm fw-bold" onclick="deconnecter()">Déconnexion</button>
+        </div>
+        
+        <div class="row text-center mb-4">
+            <div class="col-md-3">
+                <div class="card p-3 shadow-sm bg-white">
+                    <h6 class="fw-bold text-secondary">Efficacité Membranes</h6>
+                    <div class="display-6 fw-bold text-success" id="eff-membranes">95%</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-3 shadow-sm bg-white">
+                    <h6 class="fw-bold text-secondary">Efficacité Pompes</h6>
+                    <div class="display-6 fw-bold text-primary" id="eff-pompes">92%</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-3 shadow-sm bg-white">
+                    <h6 class="fw-bold text-secondary">Efficacité Tubes</h6>
+                    <div class="display-6 fw-bold text-info" id="eff-tubes">98%</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-3 shadow-sm bg-white">
+                    <h6 class="fw-bold text-secondary">Efficacité Cartouches</h6>
+                    <div class="display-6 fw-bold text-warning" id="eff-cartouches">88%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-3 shadow-sm bg-white">
+            <h5 class="text-secondary mb-3">Schéma Synoptique et Suivi Dynamique</h5>
+            
+            <div class="mb-3 row align-items-center">
+                <div class="col-md-5">
+                    <label class="form-label small fw-bold text-secondary mb-1">🖼️ Charger le schéma P&ID :</label>
+                    <input type="file" id="bg-file-input" class="form-control form-control-sm" accept="image/*" onchange="loadSchematicImage(event)">
+                </div>
+                <div class="col-md-7">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small fw-bold">⏱️ Historique temporel :</span>
+                        <span class="badge bg-primary" id="date-current-label">--/--/----</span>
+                    </div>
+                    <input type="range" class="form-range" id="timeSlider" min="0" max="0" value="0" oninput="naviguerHistorique(this.value)">
+                </div>
+            </div>
+
+            <div class="synoptic-container" id="synoptic-container">
+                <img id="bg-schematic-img" class="bg-schematic" alt="Schéma P&ID" style="display:none;">
+                <div id="no-image-placeholder" class="text-center pt-5 text-muted">
+                    <p class="mb-1">⚠️ <strong>Aucune image de schéma chargée</strong></p>
+                    <small>Veuillez sélectionner votre photo du schéma P&ID ci-dessus.</small>
+                </div>
+
+                <div class="kpi-card" style="top: 90px; left: 20px; width: 110px;">
+                    <div class="kpi-title">Débit Entrée (l/h)</div>
+                    <div class="kpi-value" id="kpi-q-feed">-</div>
+                </div>
+                <div class="kpi-card" style="top: 280px; left: 20px; width: 110px;">
+                    <div class="kpi-title">pH eau brute</div>
+                    <div class="kpi-value" id="kpi-ph-raw">-</div>
+                </div>
+                <div class="kpi-card" style="top: 460px; left: 20px; width: 110px;">
+                    <div class="kpi-title">Température (°C)</div>
+                    <div class="kpi-value" id="kpi-temp">-</div>
+                </div>
+                <div class="kpi-card" style="top: 10px; left: 130px; width: 140px;">
+                    <div class="kpi-title">Énergie (kWh)</div>
+                    <div class="kpi-value" id="kpi-energy">-</div>
+                </div>
+                <div class="kpi-card" style="top: 10px; left: 280px; width: 130px;">
+                    <div class="kpi-title">REDOX (mV)</div>
+                    <div class="kpi-value" id="kpi-redox">-</div>
+                </div>
+                <div class="kpi-card" style="top: 250px; left: 320px; width: 120px;">
+                    <div class="kpi-title">ΔP Membrane</div>
+                    <div class="kpi-value" id="kpi-dp-mem">-</div>
+                </div>
+                <div class="kpi-card" style="top: 270px; right: 20px; width: 115px;">
+                    <div class="kpi-title">TDS Sortie (ppm)</div>
+                    <div class="kpi-value" id="kpi-tds-out">-</div>
+                </div>
+                <div class="kpi-card" style="top: 460px; right: 20px; width: 115px;">
+                    <div class="kpi-title">Débit Perméat</div>
+                    <div class="kpi-value" id="kpi-q-perm">-</div>
+                </div>
+
+                <div class="status-card">
+                    <div class="fw-bold text-danger small">État de la station</div>
+                    <div class="small fw-bold mt-1" id="status-text">🟡 Surveillance</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-4 mt-4 shadow-sm bg-white">
+            <h3 class="text-primary mb-3">🛠️ Diagnostic : Problèmes, Causes Racines & Solutions</h3>
+            <div class="accordion" id="diagnosticAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button fw-bold text-danger" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                            🔴 Augmentation anormale de la Pression Transmembranaire (ΔP) & Colmatage
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#diagnosticAccordion">
+                        <div class="accordion-body small">
+                            <p><strong>Causes racines :</strong> Prétraitement défaillant (SDI élevé, turbidité excessive), entartrage minéral (sulfate de calcium, carbonate), ou bio-fouling sur les membranes d'osmose inverse.</p>
+                            <p><strong>Solutions recommandées :</strong> Vérifier les doses de coagulant (chlorure ferrique) et d'antiscalant, optimiser le lavage en place (CIP - Clean In Place) avec des solutions acides et basiques adaptées.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingTwo">
+                        <button class="accordion-button collapsed fw-bold text-warning" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                            🟡 Dégradation de la qualité du Perméat (Hausse du TDS / Conductivité)
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#diagnosticAccordion">
+                        <div class="accordion-body small">
+                            <p><strong>Causes racines :</strong> Endommagement ou usure des joints toriques (O-rings) des inter-connecteurs, attaque chimique des membranes par le chlore libre (si potentiel Redox trop élevé), ou compaction mécanique.</p>
+                            <p><strong>Solutions recommandées :</strong> Contrôler rigoureusement le dosage de métabisulfite de sodium pour éliminer le chlore résiduel, effectuer un test de probing (profilage) pour identifier les éléments défectueux.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingThree">
+                        <button class="accordion-button collapsed fw-bold text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                            🔵 Consommation Énergétique Spécifique Élevée
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#diagnosticAccordion">
+                        <div class="accordion-body small">
+                            <p><strong>Causes racines :</strong> Baisse de rendement de la pompe haute pression, température de l'eau brute basse augmentant la pression osmotique, ou encrassement sévère des membranes.</p>
+                            <p><strong>Solutions recommandées :</strong> Maintenir l'efficacité de l'échangeur de pression ou de la turbine récupératrice d'énergie, suivre les courbes normalisées de débit et de pression.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-3 mt-4 shadow-sm bg-white text-center">
+            <div class="d-flex justify-content-between align-items-center">
+                <button class="btn btn-secondary px-4 fw-bold" onclick="goToPage(4)">Page Précédente</button>
+                <span class="fw-bold text-secondary">Voulez-vous revenir à la page d'accueil ?</span>
+                <button class="btn btn-warning px-4 fw-bold text-dark" onclick="goToPage(1)">Oui, revenir à l'accueil</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Bootstrap & Logique Métier -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let historiqueDonnees = [];
+
+        function goToPage(pageNum) {
+            document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById('page-' + pageNum).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function connexionUtilisateur() {
+            const mail = document.getElementById('user-mail').value.trim();
+            const userKey = 'swro_historique_' + mail.toLowerCase();
+            historiqueDonnees = JSON.parse(localStorage.getItem(userKey)) || [];
+            goToPage(2);
+        }
+
+        function deconnecter() {
+            historiqueDonnees = [];
+            window.dernierCalcul = null;
+            document.getElementById('loginForm').reset();
+            goToPage(1);
+        }
+
+        function envoyerQuestionAI() {
+            const inputEl = document.getElementById('ai-user-input');
+            const chatBox = document.getElementById('ai-chat-messages');
+            const question = inputEl.value.trim();
+            if(!question) return;
+
+            chatBox.innerHTML += `
+                <div class="mb-2 text-end">
+                    <span class="badge bg-primary text-white">Vous</span>
+                    <div class="p-2 bg-light rounded border mt-1 text-dark text-start">${question}</div>
+                </div>
+            `;
+            inputEl.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            setTimeout(() => {
+                let reponse = "Je suis Blue Bot. Pour optimiser l'osmose inverse, veillez à bien vérifier les seuils de TDS, le pH et la pression transmembranaire !";
+                const qLower = question.toLowerCase();
+                if(qLower.includes('tds') || qLower.includes('sel')) {
+                    reponse = "Le TDS (Total des Solides Dissous) mesure la concentration en sels minéraux. L'eau brute tourne autour de 35000 PPM et le perméat doit rester sous 500 PPM.";
+                } else if(qLower.includes('ph')) {
+                    reponse = "Le pH de l'eau brute doit idéalement se situer entre 7.5 et 8.5 pour éviter d'endommager les membranes.";
+                } else if(qLower.includes('energie') || qLower.includes('kWh')) {
+                    reponse = "L'énergie spécifique de la station se calcule en divisant l'énergie totale consommée par le volume d'eau produite (cible ~3.2 kWh/m³).";
+                }
+
+                chatBox.innerHTML += `
+                    <div class="mb-2 text-start">
+                        <span class="badge bg-info text-dark fw-bold">Blue Bot</span>
+                        <div class="p-2 bg-white rounded border mt-1 text-secondary">${reponse}</div>
+                    </div>
+                `;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 600);
+        }
+
+        // Configuration des paramètres d'entrée avec Plages Min - Max explicites
+        const inputParamsConfig = [
+            { id: 'date', name: 'Date et Heure', def: 'Horodatage du relevé', ideal: 'Temps réel', minMax: 'N/A', unit: 'Date/Heure', check: null },
+            { id: 'h_demarrage', name: 'Heure de démarrage', def: 'Heure de mise en marche de la station', ideal: '08:00', minMax: '00:00 - 23:59', unit: 'Heure', check: null },
+            { id: 'h_arret', name: 'Heure d\'arrêt', def: 'Heure d\'arrêt de la station', ideal: '18:00', minMax: '00:00 - 23:59', unit: 'Heure', check: null },
+            { id: 'temp', name: 'Température eau brute', def: 'Température de l\'eau d\'alimentation', ideal: '22', minMax: '10.0 - 30.0 °C', unit: '°C', check: (v) => v < 10 || v > 30 ? {ok: false, msg: 'Alerte: Température hors plage (10 - 30°C).'} : {ok: true} },
+            { id: 'turb', name: 'Turbidité', def: 'Mesure des matières en suspension', ideal: '0.5', minMax: '0.0 - 2.0 NTU', unit: 'NTU', check: (v) => v < 0 || v > 2.0 ? {ok: false, msg: 'Alerte: Turbidité hors plage (0 - 2 NTU).'} : {ok: true} },
+            { id: 'ec_in', name: 'Conductivité entrée', def: 'Conductivité électrique de l\'eau brute', ideal: '35000', minMax: '30000 - 45000 µS/cm', unit: 'µS/cm', check: (v) => v < 30000 || v > 45000 ? {ok: false, msg: 'Alerte: Conductivité hors plage (30000 - 45000).'} : {ok: true} },
+            { id: 'tds_in', name: 'TDS entrée', def: 'Total des solides dissous dans l\'eau brute', ideal: '35000', minMax: '30000 - 40000 PPM', unit: 'PPM', check: (v) => v < 30000 || v > 40000 ? {ok: false, msg: 'Alerte: TDS entrée hors plage (30000 - 40000).'} : {ok: true} },
+            { id: 'ph_raw', name: 'pH entrée', def: 'Potentiel hydrogène de l\'eau brute', ideal: '7.8', minMax: '6.5 - 8.5', unit: 'pH', check: (v) => v < 6.5 || v > 8.5 ? {ok: false, msg: 'Alerte: pH hors plage (6.5 - 8.5).'} : {ok: true} },
+            { id: 'redox', name: 'Potentiel redox', def: 'Mesure du pouvoir oxydant/réducteur', ideal: '150', minMax: '-50 - 250 mV', unit: 'mV', check: (v) => v < -50 || v > 250 ? {ok: false, msg: 'Alerte: Redox hors plage (-50 - 250 mV).'} : {ok: true} },
+            { id: 'sdi', name: 'Indice de colmatage (SDI)', def: 'Indice de colmatage silt density index', ideal: '2.0', minMax: '1.0 - 5.0', unit: '-', check: (v) => v < 1.0 || v > 5.0 ? {ok: false, msg: 'Alerte: SDI hors plage (1.0 - 5.0).'} : {ok: true} },
+            { id: 't_agitateur', name: 'Temps de marche agitateur', def: 'Durée d\'agitation des réactifs', ideal: '60', minMax: '30 - 120 min', unit: 'min', check: (v) => v < 30 || v > 120 ? {ok: false, msg: 'Alerte: Temps agitateur hors plage.'} : {ok: true} },
+            { id: 'd_ferrique', name: 'Dose chlorure ferrique', def: 'Coagulant pour prétraitement', ideal: '2.0', minMax: '0.5 - 5.0 mg/L', unit: 'mg/L', check: (v) => v < 0.5 || v > 5.0 ? {ok: false, msg: 'Alerte: Chlorure ferrique hors plage.'} : {ok: true} },
+            { id: 'd_acide', name: 'Dose acide sulfurique', def: 'Correction du pH', ideal: '15.0', minMax: '5.0 - 30.0 mg/L', unit: 'mg/L', check: (v) => v < 5 || v > 30 ? {ok: false, msg: 'Alerte: Acide sulfurique hors plage.'} : {ok: true} },
+            { id: 'd_antiscalant', name: 'Dose antiscalant', def: 'Inhibiteur d\'entartrage', ideal: '3.0', minMax: '1.0 - 5.0 mg/L', unit: 'mg/L', check: (v) => v < 1 || v > 5 ? {ok: false, msg: 'Alerte: Antiscalant hors plage.'} : {ok: true} },
+            { id: 'd_meta', name: 'Dose métabisulfite', def: 'Neutralisant du chlore', ideal: '5.0', minMax: '2.0 - 10.0 mg/L', unit: 'mg/L', check: (v) => v < 2 || v > 10 ? {ok: false, msg: 'Alerte: Métabisulfite hors plage.'} : {ok: true} },
+            { id: 'p_entree_pompe', name: 'Pression entrée pompe bas', def: 'Pression d\'aspiration pompe BP', ideal: '2.0', minMax: '1.0 - 3.5 bar', unit: 'bar', check: (v) => v < 1.0 || v > 3.5 ? {ok: false, msg: 'Alerte: Pression aspiration hors plage (1.0 - 3.5).'} : {ok: true} },
+            { id: 'p_aval_10um', name: 'Pression aval filtre 10µm', def: 'Perte de charge filtre 10 micromètres', ideal: '1.8', minMax: '1.0 - 2.5 bar', unit: 'bar', check: (v) => v < 1.0 || v > 2.5 ? {ok: false, msg: 'Alerte: Pression 10µm hors plage (1.0 - 2.5).'} : {ok: true} },
+            { id: 'p_aval_charbon', name: 'Pression aval charbon actif', def: 'Pression après filtration charbon', ideal: '1.5', minMax: '0.8 - 2.2 bar', unit: 'bar', check: (v) => v < 0.8 || v > 2.2 ? {ok: false, msg: 'Alerte: Pression charbon hors plage (0.8 - 2.2).'} : {ok: true} },
+            { id: 'p_aval_5um', name: 'Pression aval filtre 5µm', def: 'Pression après filtre 5µm', ideal: '1.3', minMax: '0.5 - 2.0 bar', unit: 'bar', check: (v) => v < 0.5 || v > 2.0 ? {ok: false, msg: 'Alerte: Pression 5µm hors plage (0.5 - 2.0).'} : {ok: true} },
+            { id: 'p_aval_1um', name: 'Pression aval filtre 1µm', def: 'Pression après filtre de sécurité 1µm', ideal: '1.2', minMax: '0.4 - 1.8 bar', unit: 'bar', check: (v) => v < 0.4 || v > 1.8 ? {ok: false, msg: 'Alerte: Pression 1µm hors plage (0.4 - 1.8).'} : {ok: true} },
+            { id: 'p_entree_mem', name: 'Pression entrée membrane', def: 'Pression haute pression d\'alimentation RO', ideal: '65.0', minMax: '50.0 - 80.0 bar', unit: 'bar', check: (v) => v < 50 || v > 80 ? {ok: false, msg: 'Alerte: Pression entrée membrane hors plage (50 - 80).'} : {ok: true} },
+            { id: 'taux_conv', name: 'Taux de conversion', def: 'Pourcentage de conversion eau brute en perméat', ideal: '42.0', minMax: '30.0 - 50.0 %', unit: '%', check: (v) => v < 30 || v > 50 ? {ok: false, msg: 'Alerte: Taux de conversion hors plage (30 - 50%).'} : {ok: true} }
+        ];
+
+        // Configuration des paramètres de sortie avec Plages Min - Max explicites
+        const outputParamsConfig = [
+            { id: 'dp_mem', name: 'Variation pression membranaire (ΔP)', def: 'Différence de pression entrée-rejet', ideal: '1.5', minMax: '0.5 - 3.0 bar', unit: 'bar', check: (v) => v < 0.5 || v > 3.0 ? {ok: false, msg: 'Alerte: ΔP hors plage (0.5 - 3.0).'} : {ok: true} },
+            { id: 'q_rejet', name: 'Débit de rejet', def: 'Débit de saumure rejetée', ideal: '75.0', minMax: '50.0 - 100.0 l/h', unit: 'l/h', check: (v) => v < 50 || v > 100 ? {ok: false, msg: 'Alerte: Débit de rejet hors plage.'} : {ok: true} },
+            { id: 'p_rejet', name: 'Pression de rejet', def: 'Pression en sortie de membrane', ideal: '63.5', minMax: '48.0 - 78.0 bar', unit: 'bar', check: (v) => v < 48 || v > 78 ? {ok: false, msg: 'Alerte: Pression de rejet hors plage.'} : {ok: true} },
+            { id: 'p_perm', name: 'Pression du perméat', def: 'Pression de l\'eau dessalée collectée', ideal: '0.5', minMax: '0.0 - 1.5 bar', unit: 'bar', check: (v) => v < 0 || v > 1.5 ? {ok: false, msg: 'Alerte: Pression perméat hors plage (0 - 1.5).'} : {ok: true} },
+            { id: 'q_perm', name: 'Débit du perméat', def: 'Débit d\'eau produite', ideal: '50.0', minMax: '30.0 - 80.0 l/h', unit: 'l/h', check: (v) => v < 30 || v > 80 ? {ok: false, msg: 'Alerte: Débit perméat hors plage.'} : {ok: true} },
+            { id: 'taux_rejet', name: 'Taux de rejet de sel', def: 'Efficacité d\'élimination des sels', ideal: '99.2', minMax: '98.5 - 99.9 %', unit: '%', check: (v) => v < 98.5 || v > 99.9 ? {ok: false, msg: 'Alerte: Taux de rejet hors plage (98.5 - 99.9%).'} : {ok: true} },
+            { id: 'ptm', name: 'Pression transmembranaire (PTM)', def: 'Pression moyenne exercée sur la membrane', ideal: '62.0', minMax: '45.0 - 75.0 bar', unit: 'bar', check: (v) => v < 45 || v > 75 ? {ok: false, msg: 'Alerte: PTM hors plage (45 - 75).'} : {ok: true} },
+            { id: 'fct_temp', name: 'Facteur de correction température (TCF)', def: 'Correction de la perméabilité selon T°', ideal: '1.0', minMax: '0.8 - 1.3', unit: '-', check: null },
+            { id: 'debit_norm', name: 'Débit normalisé', def: 'Débit ramené aux conditions standard', ideal: '50.0', minMax: '40.0 - 60.0 l/h', unit: 'l/h', check: null },
+            { id: 'press_norm', name: 'Pression normalisée', def: 'Pression ramenée aux conditions standard', ideal: '65.0', minMax: '50.0 - 80.0 bar', unit: 'bar', check: null },
+            { id: 'flux_spec', name: 'Flux spécifique', def: 'Débit par unité de surface et de PTM', ideal: '15.0', minMax: '12.0 - 25.0 L/h/m²/bar', unit: 'L/h/m²/bar', check: (v) => v < 12 || v > 25 ? {ok: false, msg: 'Alerte: Flux spécifique hors plage (12 - 25).'} : {ok: true} },
+            { id: 'vol_prod', name: 'Volume produit', def: 'Volume total d\'eau dessalée sur la période', ideal: '500.0', minMax: '300.0 - 800.0 L', unit: 'L', check: null },
+            { id: 'energie', name: 'Énergie consommée', def: 'Énergie totale active utilisée', ideal: '12.5', minMax: '8.0 - 20.0 kWh', unit: 'kWh', check: null },
+            { id: 'puissance', name: 'Puissance consommée', def: 'Puissance instantanée de la station', ideal: '3.5', minMax: '2.0 - 5.0 kW', unit: 'kW', check: (v) => v < 2 || v > 5 ? {ok: false, msg: 'Alerte: Puissance hors plage (2.0 - 5.0 kW).'} : {ok: true} },
+            { id: 'energie_spec', name: 'Énergie spécifique', def: 'Énergie par m3 d\'eau produite', ideal: '3.2', minMax: '2.5 - 4.5 kWh/m³', unit: 'kWh/m³', check: (v) => v < 2.5 || v > 4.5 ? {ok: false, msg: 'Alerte: Énergie spécifique hors plage (2.5 - 4.5).'} : {ok: true} },
+            { id: 'tds_out', name: 'TDS sortie (Perméat)', def: 'Concentration en sels de l\'eau produite', ideal: '300.0', minMax: '100.0 - 500.0 PPM', unit: 'PPM', check: (v) => v < 100 || v > 500 ? {ok: false, msg: 'Alerte: TDS sortie hors plage (100 - 500 PPM).'} : {ok: true} }
+        ];
+
+        function initTables() {
+            const tbodyIn = document.getElementById('tbody-inputs');
+            tbodyIn.innerHTML = '';
+            inputParamsConfig.forEach(param => {
+                let inputHtml = '';
+                if(param.id === 'date') {
+                    inputHtml = `<input type="datetime-local" id="in_${param.id}" class="form-control form-control-sm" required>`;
+                } else if(param.id === 'h_demarrage' || param.id === 'h_arret') {
+                    inputHtml = `<input type="time" id="in_${param.id}" class="form-control form-control-sm" required>`;
+                } else {
+                    inputHtml = `<input type="number" step="any" id="in_${param.id}" class="form-control form-control-sm" placeholder="Valeur en ${param.unit}" oninput="validerEntree('${param.id}')" required>`;
+                }
+
+                tbodyIn.innerHTML += `
+                    <tr>
+                        <td class="fw-bold">${param.name} (${param.unit})</td>
+                        <td>${param.def}</td>
+                        <td>${inputHtml}</td>
+                        <td class="text-center">${param.ideal}</td>
+                        <td class="text-center text-danger fw-semibold">${param.minMax}</td>
+                        <td class="text-center"><span class="circle-indicator bg-green" id="conf_in_${param.id}"></span></td>
+                        <td><small class="text-muted" id="comm_in_${param.id}">Normal</small></td>
+                    </tr>
+                `;
+            });
+
+            const tbodyOut = document.getElementById('tbody-outputs');
+            tbodyOut.innerHTML = '';
+            outputParamsConfig.forEach(param => {
+                tbodyOut.innerHTML += `
+                    <tr>
+                        <td class="fw-bold">${param.name} (${param.unit})</td>
+                        <td>${param.def}</td>
+                        <td>Calcul automatique</td>
+                        <td class="fw-bold text-center text-primary" id="out_val_${param.id}">-</td>
+                        <td class="text-center">${param.ideal}</td>
+                        <td class="text-center text-danger fw-semibold">${param.minMax}</td>
+                        <td class="text-center"><span class="circle-indicator bg-green" id="conf_out_${param.id}"></span></td>
+                        <td><small class="text-muted" id="comm_out_${param.id}">Normal</small></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function validerEntree(paramId) {
+            const param = inputParamsConfig.find(p => p.id === paramId);
+            const inputEl = document.getElementById('in_' + paramId);
+            const indicatorEl = document.getElementById('conf_in_' + paramId);
+            const commEl = document.getElementById('comm_in_' + paramId);
+
+            if(!inputEl || !param.check) return;
+
+            const val = parseFloat(inputEl.value);
+            if(isNaN(inputEl.value) || inputEl.value === '') {
+                indicatorEl.className = 'circle-indicator bg-green';
+                commEl.innerText = 'Normal';
+                commEl.className = 'text-muted';
+                return;
+            }
+
+            const res = param.check(val);
+            if(res.ok) {
+                indicatorEl.className = 'circle-indicator bg-green';
+                commEl.innerText = 'Normal';
+                commEl.className = 'text-muted';
+            } else {
+                indicatorEl.className = 'circle-indicator bg-red';
+                commEl.innerText = res.msg;
+                commEl.className = 'text-danger fw-bold';
+            }
+        }
+
+        function lancerCalcul() {
+            let data = {};
+            let isValid = true;
+            inputParamsConfig.forEach(param => {
+                const el = document.getElementById('in_' + param.id);
+                if(el) {
+                    data[param.id] = el.value;
+                    if(!el.value && param.id !== 'date') isValid = false;
+                }
+            });
+
+            if(!isValid) {
+                alert('Veuillez remplir tous les champs obligatoires des paramètres d\'entrée.');
+                return;
+            }
+
+            let tdsInVal = parseFloat(data.tds_in) || 35000;
+            let pEntreeMem = parseFloat(data.p_entree_mem) || 65.0;
+            
+            let calculatedOutputs = {
+                dp_mem: (pEntreeMem * 0.05 + 1.2).toFixed(2),
+                q_rejet: '75.0',
+                p_rejet: (pEntreeMem - 1.5).toFixed(2),
+                p_perm: '0.5',
+                q_perm: '50.0',
+                taux_rejet: '99.3',
+                ptm: (pEntreeMem - 0.75).toFixed(2),
+                fct_temp: '1.02',
+                debit_norm: '50.0',
+                press_norm: pEntreeMem.toFixed(1),
+                flux_spec: '14.5',
+                vol_prod: '500',
+                energie: '12.5',
+                puissance: '3.5',
+                energie_spec: '3.2',
+                tds_out: (tdsInVal * 0.008).toFixed(1)
+            };
+
+            outputParamsConfig.forEach(param => {
+                const valEl = document.getElementById('out_val_' + param.id);
+                const indicatorEl = document.getElementById('conf_out_' + param.id);
+                const commEl = document.getElementById('comm_out_' + param.id);
+                const val = parseFloat(calculatedOutputs[param.id]);
+
+                if(valEl) {
+                    valEl.innerText = calculatedOutputs[param.id] + ' ' + param.unit;
+                }
+
+                if(param.check && !isNaN(val)) {
+                    const res = param.check(val);
+                    if(res.ok) {
+                        indicatorEl.className = 'circle-indicator bg-green';
+                        commEl.innerText = 'Normal';
+                        commEl.className = 'text-muted';
+                    } else {
+                        indicatorEl.className = 'circle-indicator bg-red';
+                        commEl.innerText = res.msg;
+                        commEl.className = 'text-danger fw-bold';
+                    }
+                }
+            });
+
+            window.dernierCalcul = { ...data, ...calculatedOutputs, date: data.date || new Date().toISOString() };
+
+            goToPage(3);
+        }
+
+        function enregistrerEtAllerPage(pageNum) {
+            if(window.dernierCalcul) {
+                const mail = document.getElementById('user-mail').value.trim();
+                const userKey = 'swro_historique_' + mail.toLowerCase();
+                
+                historiqueDonnees.push(window.dernierCalcul);
+                localStorage.setItem(userKey, JSON.stringify(historiqueDonnees));
+                
+                mettreAJourHistoriqueEtGraphes();
+            }
+            goToPage(pageNum);
+        }
+
+        let chartTdsInstance = null;
+        let chartEnergyInstance = null;
+
+        function mettreAJourHistoriqueEtGraphes() {
+            const tbody = document.querySelector('#history-table tbody');
+            tbody.innerHTML = '';
+
+            let labels = [];
+            let dataTds = [];
+            let dataEnergy = [];
+
+            historiqueDonnees.forEach(item => {
+                let dateStr = item.date ? new Date(item.date).toLocaleString('fr-FR') : 'N/A';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${dateStr}</td>
+                        <td>${item.tds_in || '-'} PPM</td>
+                        <td>${item.tds_out || '-'} PPM</td>
+                        <td>${item.energie || '-'} kWh</td>
+                        <td>${item.q_perm || '-'} l/h</td>
+                    </tr>
+                `;
+                labels.push(dateStr);
+                dataTds.push(parseFloat(item.tds_in) || 0);
+                dataEnergy.push(parseFloat(item.energie) || 0);
+            });
+
+            if(chartTdsInstance) chartTdsInstance.destroy();
+            if(chartEnergyInstance) chartEnergyInstance.destroy();
+
+            const ctx1 = document.getElementById('chartTds').getContext('2d');
+            chartTdsInstance = new Chart(ctx1, {
+                type: 'line',
+                data: { labels: labels, datasets: [{ label: 'TDS (PPM)', data: dataTds, borderColor: '#0078d4', backgroundColor: 'rgba(0,120,212,0.1)', fill: true }] },
+                options: { responsive: true, scales: { y: { beginAtZero: false } } }
+            });
+
+            const ctx2 = document.getElementById('chartEnergy').getContext('2d');
+            chartEnergyInstance = new Chart(ctx2, {
+                type: 'line',
+                data: { labels: labels, datasets: [{ label: 'Énergie (kWh)', data: dataEnergy, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', fill: true }] },
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+
+            actualiserSliderSynoptique();
+        }
+
+        function loadSchematicImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imgData = e.target.result;
+                    const imgElement = document.getElementById('bg-schematic-img');
+                    imgElement.src = imgData;
+                    imgElement.style.display = 'block';
+                    document.getElementById('no-image-placeholder').style.display = 'none';
+                    localStorage.setItem('swro_bg_image', imgData);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function actualiserSliderSynoptique() {
+            const slider = document.getElementById('timeSlider');
+            if (historiqueDonnees.length > 0) {
+                slider.min = 0;
+                slider.max = historiqueDonnees.length - 1;
+                slider.value = historiqueDonnees.length - 1;
+                afficherSurSchema(historiqueDonnees.length - 1);
+            }
+        }
+
+        function naviguerHistorique(index) {
+            afficherSurSchema(index);
+        }
+
+        function afficherSurSchema(index) {
+            if (historiqueDonnees.length === 0 || !historiqueDonnees[index]) return;
+            const data = historiqueDonnees[index];
+            
+            document.getElementById('date-current-label').innerText = data.date ? new Date(data.date).toLocaleString('fr-FR') : '-';
+            document.getElementById('kpi-q-feed').innerText = data.q_feed ?? '50';
+            document.getElementById('kpi-ph-raw').innerText = data.ph_raw ?? '7.8';
+            document.getElementById('kpi-temp').innerText = data.temp ?? '22';
+            document.getElementById('kpi-energy').innerText = data.energie ?? '12.5';
+            document.getElementById('kpi-redox').innerText = data.redox ?? '150';
+            document.getElementById('kpi-dp-mem').innerText = data.dp_mem ?? '1.5';
+            document.getElementById('kpi-tds-out').innerText = data.tds_out ?? '300';
+            document.getElementById('kpi-q-perm').innerText = data.q_perm ?? '50';
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initTables();
+            const savedImg = localStorage.getItem('swro_bg_image');
+            if (savedImg) {
+                const imgElement = document.getElementById('bg-schematic-img');
+                imgElement.src = savedImg;
+                imgElement.style.display = 'block';
+                document.getElementById('no-image-placeholder').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
